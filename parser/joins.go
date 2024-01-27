@@ -30,11 +30,8 @@ func (p *Parser) extractFromSelectAST(stmt *sqlparser.Select) {
 }
 
 func (p *Parser) extractFromJoinTableExpr(expr *sqlparser.JoinTableExpr) {
-	traversedJoinTables, traversedJoinConditions := traverseAST(expr)
+	_, traversedJoinConditions := traverseAST(expr)
 	tableCache := map[string]string{}
-	for _, t := range traversedJoinTables {
-		p.alias[t.Alias] = t.Table
-	}
 	for _, c := range traversedJoinConditions {
 		p.joins = append(p.joins, Joins{
 			Inner: JoinColMetadata{
