@@ -57,7 +57,9 @@ type Aggregations struct {
 	AggregationType AggregationType
 }
 
+// Scan TODO: In documents, specify why we don't take operation type.
 type Scan struct {
-	Table  string
-	Column string
+	Table     string
+	Column    string
+	Qualifier string
 }

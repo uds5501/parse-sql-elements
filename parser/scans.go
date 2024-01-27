@@ -104,7 +104,7 @@ func (p *Parser) extractFromOrExpr(expr *sqlparser.OrExpr) {
 }
 
 func (p *Parser) extractFromComparisonExpr(expr *sqlparser.ComparisonExpr) {
-	// extract the join!
+	// extract the join and return!
 	if expr.Operator == sqlparser.EqualOp &&
 		getInternalComparisonType(expr.Left).isColName() &&
 		getInternalComparisonType(expr.Right).isColName() {
@@ -132,6 +132,7 @@ func (p *Parser) extractFromComparisonExpr(expr *sqlparser.ComparisonExpr) {
 				Qualifier: outerTable,
 			},
 		})
+		return
 	}
 
 	if getInternalComparisonType(expr.Left).isSubQuery() {
@@ -139,6 +140,25 @@ func (p *Parser) extractFromComparisonExpr(expr *sqlparser.ComparisonExpr) {
 	}
 	if getInternalComparisonType(expr.Right).isSubQuery() {
 		p.extractFromSubQuery(expr.Right)
+	}
+
+	if (getInternalComparisonType(expr.Left)).isColName() {
+		switch inner := expr.Left.(type) {
+		case *sqlparser.ColName:
+			p.scans = append(p.scans, Scan{
+				Column:    inner.Name.String(),
+				Qualifier: inner.Qualifier.Name.String(),
+			})
+		}
+	}
+	if (getInternalComparisonType(expr.Right)).isColName() {
+		switch inner := expr.Right.(type) {
+		case *sqlparser.ColName:
+			p.scans = append(p.scans, Scan{
+				Column:    inner.Name.String(),
+				Qualifier: inner.Qualifier.Name.String(),
+			})
+		}
 	}
 }
 
