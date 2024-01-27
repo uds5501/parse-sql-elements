@@ -5,27 +5,31 @@ import (
 	"vitess.io/vitess/go/vt/sqlparser"
 )
 
-func (p *Parser) extractJoins(ast sqlparser.Statement) {
+func (p *Parser) extract(ast sqlparser.Statement) {
 	switch stmt := ast.(type) {
 	case *sqlparser.Select:
-		p.extractJoinFromSelectStatement(stmt)
+		p.extractFromSelectAST(stmt)
 	default:
 		log.Println("SQL Query is not SELECT type")
 	}
 }
 
-func (p *Parser) extractJoinFromSelectStatement(stmt *sqlparser.Select) {
+func (p *Parser) extractFromSelectAST(stmt *sqlparser.Select) {
 	if stmt.From != nil {
 		for _, tableExpr := range stmt.From {
 			switch expr := tableExpr.(type) {
 			case *sqlparser.JoinTableExpr:
-				p.extractJoinFromJoinTableExpr(expr)
+				p.extractFromJoinTableExpr(expr)
 			}
 		}
 	}
+	// TODO: Extract other elements as well here.
+	if stmt.Where != nil {
+		p.extractFromWhere(stmt.Where)
+	}
 }
 
-func (p *Parser) extractJoinFromJoinTableExpr(expr *sqlparser.JoinTableExpr) {
+func (p *Parser) extractFromJoinTableExpr(expr *sqlparser.JoinTableExpr) {
 	traversedJoinTables, traversedJoinConditions := traverseAST(expr)
 	tableCache := map[string]string{}
 	for _, t := range traversedJoinTables {
@@ -48,31 +52,31 @@ func (p *Parser) extractJoinFromJoinTableExpr(expr *sqlparser.JoinTableExpr) {
 }
 
 func traverseAST(expr *sqlparser.JoinTableExpr) ([]ASTTraversalJoinTableMetadata, []ASTTraversalJoinConditionMetadata) {
-	defaultTableMetadata := []ASTTraversalJoinTableMetadata{}
-	defaultConditionMetadata := []ASTTraversalJoinConditionMetadata{}
+	tableMetadata := []ASTTraversalJoinTableMetadata{}
+	conditionMetadata := []ASTTraversalJoinConditionMetadata{}
 
 	// definitely there is a condition here, extract the condition here :D
-	defaultConditionMetadata = append(defaultConditionMetadata, extractASTTableConditionFromExpression(expr))
+	conditionMetadata = append(conditionMetadata, extractASTTableConditionFromExpression(expr))
 
 	switch leftExpr := expr.LeftExpr.(type) {
 	case *sqlparser.AliasedTableExpr:
-		defaultTableMetadata = append(defaultTableMetadata, extractASTTableMetadataFromExpression(leftExpr))
+		tableMetadata = append(tableMetadata, extractASTTableMetadataFromExpression(leftExpr))
 	case *sqlparser.JoinTableExpr:
 		// if child itself is a join expression, go deeper :)
 		childTables, childConditions := traverseAST(leftExpr)
-		defaultTableMetadata = append(defaultTableMetadata, childTables...)
-		defaultConditionMetadata = append(defaultConditionMetadata, childConditions...)
+		tableMetadata = append(tableMetadata, childTables...)
+		conditionMetadata = append(conditionMetadata, childConditions...)
 	}
 
 	switch rightExpr := expr.RightExpr.(type) {
 	case *sqlparser.AliasedTableExpr:
-		defaultTableMetadata = append(defaultTableMetadata, extractASTTableMetadataFromExpression(rightExpr))
+		tableMetadata = append(tableMetadata, extractASTTableMetadataFromExpression(rightExpr))
 	case *sqlparser.JoinTableExpr:
 		childTables, childConditions := traverseAST(rightExpr)
-		defaultTableMetadata = append(defaultTableMetadata, childTables...)
-		defaultConditionMetadata = append(defaultConditionMetadata, childConditions...)
+		tableMetadata = append(tableMetadata, childTables...)
+		conditionMetadata = append(conditionMetadata, childConditions...)
 	}
-	return defaultTableMetadata, defaultConditionMetadata
+	return tableMetadata, conditionMetadata
 }
 
 func extractASTTableMetadataFromExpression(aliasedExpr *sqlparser.AliasedTableExpr) ASTTraversalJoinTableMetadata {

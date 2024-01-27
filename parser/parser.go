@@ -16,7 +16,7 @@ type Parser struct {
 	existingTables []Table
 }
 
-func newParser() Parser {
+func NewParser() Parser {
 	return Parser{
 		alias:      map[string]string{},
 		joins:      []Joins{},
@@ -36,9 +36,7 @@ func (p *Parser) ParseQuery(sql string) error {
 		return err
 	}
 	fmt.Println(pretty.Sprint(ast))
-	p.extractJoins(ast)
-	p.extractAggregates(ast)
-	p.extractScans(ast)
+	p.extract(ast)
 
 	fmt.Println("joins: ", p.joins)
 	fmt.Println("aggregates: ", p.aggregates)
@@ -116,10 +114,15 @@ func (p *Parser) verifyConfiguration() error {
 	return nil
 }
 
-//TODO: Take this responsibility away from parser and model engine accordingly.
-func (p *Parser) GeneratePlans() {
-	// Generate plans for I/O related configs only.
-	// start with SCANS. (imagine every scan is binary tree.)
-	// then go to JOINS. (try doing different combo of joins there :))
+func (p *Parser) extractFromWhere(where *sqlparser.Where) {
+	fmt.Println("in where...")
+	switch expr := where.Expr.(type) {
+	case *sqlparser.ComparisonExpr:
+		p.extractFromComparisonExpr(expr)
+	case *sqlparser.AndExpr:
+		p.extractFromAndExpr(expr)
+	case *sqlparser.OrExpr:
+		p.extractFromOrExpr(expr)
+	}
 
 }
