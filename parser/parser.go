@@ -44,15 +44,3 @@ func (p *Parser) ParseQuery(sql string) error {
 	}
 	return nil
 }
-
-func (p *Parser) extractFromWhere(where *sqlparser.Where) {
-	switch expr := where.Expr.(type) {
-	case *sqlparser.ComparisonExpr:
-		p.extractFromComparisonExpr(expr)
-	case *sqlparser.AndExpr:
-		p.extractFromAndExpr(expr)
-	case *sqlparser.OrExpr:
-		p.extractFromOrExpr(expr)
-	}
-
-}

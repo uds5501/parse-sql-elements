@@ -23,9 +23,18 @@ func (p *Parser) extractFromSelectAST(stmt *sqlparser.Select) {
 			}
 		}
 	}
-	// TODO: Extract other elements as well here.
+
 	if stmt.Where != nil {
 		p.extractFromWhere(stmt.Where)
+	}
+
+	if stmt.SelectExprs != nil {
+		for _, exprs := range stmt.SelectExprs {
+			switch aliasedExpr := exprs.(type) {
+			case *sqlparser.AliasedExpr:
+				p.extractAggregates(aliasedExpr)
+			}
+		}
 	}
 }
 

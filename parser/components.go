@@ -1,32 +1,14 @@
 package parser
 
 type AggregationType string
-type DataType string
 
 const (
 	AggregationTypeCount AggregationType = "COUNT"
 	AggregationTypeAvg   AggregationType = "AVG"
+	AggregationTypeSum   AggregationType = "SUM"
+	AggregationTypeMin   AggregationType = "MIN"
+	AggregationTypeMax   AggregationType = "MAX"
 )
-
-const (
-	DataTypeText     DataType = "TEXT"
-	DataTypeInt      DataType = "INT"
-	DataTypeSmallInt DataType = "SMALLINT"
-	DataTypeBoolean  DataType = "BOOLEAN"
-	DataTypeFloat    DataType = "FLOAT"
-)
-
-type Column struct {
-	Name      string
-	IsIndexed bool
-	DataType  DataType
-}
-
-type Table struct {
-	Name    string
-	Columns []Column
-	Rows    int
-}
 
 type JoinColMetadata struct {
 	Column    string
@@ -54,6 +36,7 @@ type ASTTraversalJoinConditionMetadata struct {
 type Aggregations struct {
 	Table           string
 	Column          string
+	Qualifier       string
 	AggregationType AggregationType
 }
 

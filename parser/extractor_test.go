@@ -389,3 +389,83 @@ func TestScans(t *testing.T) {
 		})
 	}
 }
+
+func TestAggregates(t *testing.T) {
+	testCases := []struct {
+		Name               string
+		Sql                string
+		ExpectedAggregates []Aggregations
+	}{
+		{
+			Name: "Count * Aggregate test",
+			Sql: `SELECT COUNT(*)
+					FROM
+						Parcels P
+						INNER JOIN Users U on P.user_id = U.id
+					WHERE U.id = 100 OR  
+					(SELECT parcel_id FROM ParcelList PL 
+					WHERE PL.parcel_id = P.id) = U.check_id;`,
+			ExpectedAggregates: []Aggregations{
+				{
+					AggregationType: AggregationTypeCount,
+				},
+			},
+		},
+		{
+			Name: "Sum and Avg Aggregate test",
+			Sql: `SELECT SUM(U.id), AVG(P.user_id)
+					FROM
+						Parcels P
+						INNER JOIN Users U on P.user_id = U.id
+					WHERE U.id = 100 OR  
+					(SELECT parcel_id FROM ParcelList PL 
+					WHERE PL.parcel_id = P.id) = U.check_id;`,
+			ExpectedAggregates: []Aggregations{
+				{
+					AggregationType: AggregationTypeSum,
+					Column:          "id",
+					Qualifier:       "U",
+				},
+				{
+					AggregationType: AggregationTypeAvg,
+					Column:          "user_id",
+					Qualifier:       "P",
+				},
+			},
+		},
+		{
+			Name: "Min and Max Aggregate test",
+			Sql: `SELECT MIN(U.id), MAX(P.user_id)
+					FROM
+						Parcels P
+						INNER JOIN Users U on P.user_id = U.id
+					WHERE U.id = 100 OR  
+					(SELECT parcel_id FROM ParcelList PL 
+					WHERE PL.parcel_id = P.id) = U.check_id;`,
+			ExpectedAggregates: []Aggregations{
+				{
+					AggregationType: AggregationTypeMin,
+					Column:          "id",
+					Qualifier:       "U",
+				},
+				{
+					AggregationType: AggregationTypeMax,
+					Column:          "user_id",
+					Qualifier:       "P",
+				},
+			},
+		},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			fmt.Println("SQL: ", testCase.Sql)
+			ast, _, err := sqlparser.Parse2(testCase.Sql)
+			if err != nil {
+				fmt.Println(err)
+			}
+			p := NewParser()
+			p.extract(ast)
+			assert.ElementsMatch(t, p.aggregates, testCase.ExpectedAggregates)
+		})
+	}
+}
