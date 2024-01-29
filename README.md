@@ -39,7 +39,7 @@ func main() {
 }
 ```
 
-This should give you the following output (as per release >= `v0.0.5`)
+This should give you the following output (as per release >= `v0.0.4`)
 
 ```shell
 [{{department_id  employees} {department_id  departments}}]
@@ -62,7 +62,7 @@ Currently, the parser should be able to identify the joins, selects and aggregat
 | Insert         | N/A                       | N/A                          | N/A             |
 
 ### Current stable version:
-Current stable published version is `v0.0.5`, I'll be updating this as I keep supporting newer queries.
+Current stable published version is `v0.0.4`, I'll be updating this as I keep supporting newer queries.
 
 ### Have a feature request?
 If you have a feature request and there is something I like to implement in future versions, I'd recommend you to
