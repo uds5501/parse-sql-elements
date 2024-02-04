@@ -81,6 +81,80 @@ LIMIT 10;
 	assert.ElementsMatch(t, p.joins, expectedJoins)
 }
 
+func TestReset(t *testing.T) {
+	sql := `
+SELECT
+    t1.columnA,
+    t2.columnB,
+    t3.columnC
+FROM
+    table1 t1
+    INNER JOIN table2 t2 ON t1.id = t2.table1_id
+    INNER JOIN table3 t3 ON t2.id = t3.table2_id
+    INNER JOIN table4 t4 ON t3.id = t4.table3_id
+    INNER JOIN table5 t5 ON t4.id = t5.table4_id
+ORDER BY
+    t3.columnC DESC, t2.columnB ASC
+LIMIT 10;
+`
+	ast, _, _ := sqlparser.Parse2(sql)
+	expectedJoins := []Joins{
+		{
+			Inner: JoinColMetadata{
+				Column:    "id",
+				Table:     "",
+				Qualifier: "t4",
+			},
+			Outer: JoinColMetadata{
+				Column:    "table4_id",
+				Table:     "",
+				Qualifier: "t5",
+			},
+		},
+		{
+			Inner: JoinColMetadata{
+				Column:    "id",
+				Table:     "",
+				Qualifier: "t3",
+			},
+			Outer: JoinColMetadata{
+				Column:    "table3_id",
+				Table:     "",
+				Qualifier: "t4",
+			},
+		},
+		{
+			Inner: JoinColMetadata{
+				Column:    "id",
+				Table:     "",
+				Qualifier: "t2",
+			},
+			Outer: JoinColMetadata{
+				Column:    "table2_id",
+				Table:     "",
+				Qualifier: "t3",
+			},
+		},
+		{
+			Inner: JoinColMetadata{
+				Column:    "id",
+				Table:     "",
+				Qualifier: "t1",
+			},
+			Outer: JoinColMetadata{
+				Column:    "table1_id",
+				Table:     "",
+				Qualifier: "t2",
+			},
+		},
+	}
+	p := NewParser()
+	p.extract(ast)
+	assert.ElementsMatch(t, p.joins, expectedJoins)
+	p.Reset()
+	assert.Equal(t, len(p.joins), 0)
+}
+
 func TestJoinExtractWithinSelect(t *testing.T) {
 	sql := `
 SELECT *

@@ -31,6 +31,12 @@ func (p *Parser) GetAggregates() []Aggregations {
 	return p.aggregates
 }
 
+func (p *Parser) Reset() {
+	p.aggregates = []Aggregations{}
+	p.scans = []Scan{}
+	p.joins = []Joins{}
+}
+
 func (p *Parser) ParseQuery(sql string) error {
 	ast, _, err := sqlparser.Parse2(sql)
 	if err != nil {

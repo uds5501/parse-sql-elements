@@ -34,20 +34,19 @@ func main() {
         FROM employees JOIN departments ON employees.department_id = departments.department_id;`
 
 	parser.ParseQuery(sql)
-	fmt.Println(parser.GetJoins())
-	fmt.Println(parser.GetAggregates())
+	fmt.Println("Joins: ", parser.GetJoins())
+	fmt.Println("Aggregates: ", parser.GetAggregates())
 }
 ```
 
 This should give you the following output (as per release >= `v0.0.4`)
 
 ```shell
-[{{department_id  employees} {department_id  departments}}]
-[{ salary employees AVG}]
+Joins: [{{department_id  employees} {department_id  departments}}]
+Aggregates: [{ salary employees AVG}]
 ```
 
-Note: Currently, I'd recommend you to create a new parser for each query you want to parse.
-I'll be adding the support to reset the parser metadata in future releases.
+To parse a new query, just perform a `parser.Reset()` and you are good to go!
 
 ### Query Support
 
